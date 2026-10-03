@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TRZM AI</title>
+
+<style>
+:root{
+  font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;
+  color-scheme:dark;
+  --bg:#0b0d12;
+  --panel:#11151d;
+  --panel2:#171c26;
+  --line:#272e3a;
+  --text:#f4f6fb;
+  --muted:#9aa4b5;
+  --accent:#7c5cff;
+  --accent2:#9b85ff;
+}
+
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+}
+
+#app{
+  min-height:100vh;
+  background:var(--bg);
+  display:grid;
+  grid-template-columns:260px 1fr;
+}
+
+.sidebar{
+  border-right:1px solid var(--line);
+  padding:18px;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.brand{
+  font-weight:800;
+  font-size:22px;
+  letter-spacing:.4px;
+}
+
+.brand span{
+  color:var(--accent2);
+}
+
+button{
+  font:inherit;
+  color:inherit;
+  border:1px solid var(--line);
+  background:var(--panel2);
+  border-radius:10px;
+  padding:10px 13px;
+  cursor:pointer;
+}
+
+button:hover{
+  border-color:#4a5363;
+  background:#1b2130;
+}
+
+.new{
+  background:var(--accent);
+  border-color:var(--accent);
+  font-weight:700;
+}
+
+.new:hover{
+  background:var(--accent2);
+}
+
+.history{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  overflow:auto;
+}
+
+.history button{
+  text-align:left;
+  background:transparent;
+  border-color:transparent;
+  color:var(--muted);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.history button:hover{
+  color:var(--text);
+}
+
+.spacer{
+  flex:1;
+}
+
+.status{
+  font-size:12px;
+  color:var(--muted);
+  padding:8px;
+}
+
+main{
+  display:flex;
+  flex-direction:column;
+  min-width:0;
+  height:100vh;
+}
+
+.top{
+  height:64px;
+  border-bottom:1px solid var(--line);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 24px;
+}
+
+.model{
+  font-weight:700;
+}
+
+.badge{
+  font-size:11px;
+  color:#bdb3ff;
+  border:1px solid #443b71;
+  background:#211b3a;
+  padding:5px 8px;
+  border-radius:999px;
+}
+
+.chat{
+  flex:1;
+  overflow:auto;
+  padding:28px max(20px,calc((100vw - 900px)/2));
+  display:flex;
+  flex-direction:column;
+  gap:22px;
+}
+
+.welcome{
+  text-align:center;
+  margin:auto;
+  max-width:650px;
+}
+
+.welcome h1{
+  font-size:42px;
+  margin:0 0 10px;
+}
+
+.welcome p{
+  color:var(--muted);
+  font-size:16px;
+}
+
+.msg{
+  display:flex;
+  gap:12px;
+  max-width:800px;
+  line-height:1.6;
+}
+
+.msg.user{
+  margin-left:auto;
+  flex-direction:row-reverse;
+}
+
+.avatar{
+  width:34px;
+  height:34px;
+  border-radius:10px;
+  display:grid;
+  place-items:center;
+  background:var(--panel2);
+  border:1px solid var(--line);
+  font-size:13px;
+  font-weight:800;
+  flex:none;
+}
+
+.user .avatar{
+  background:var(--accent);
+  border-color:var(--accent);
+}
+
+.bubble{
+  padding:12px 15px;
+  border:1px solid var(--line);
+  background:var(--panel);
+  border-radius:15px;
+  white-space:pre-wrap;
+}
+
+.user .bubble{
+  background:#211a45;
+  border-color:#493b87;
+}
+
+.composer{
+  padding:16px max(20px,calc((100vw - 900px)/2));
+  border-top:1px solid var(--line);
+}
+
+form{
+  display:flex;
+  gap:10px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:8px;
+}
+
+.composer textarea{
+  flex:1;
+  background:transparent;
+  border:0;
+  outline:0;
+  color:var(--text);
+  resize:none;
+  padding:10px;
+  min-height:44px;
+  max-height:150px;
+  font:inherit;
+}
+
+.send{
+  align-self:flex-end;
+  background:var(--accent);
+  border-color:var(--accent);
+  font-weight:700;
+}
+
+.hint{
+  text-align:center;
+  color:var(--muted);
+  font-size:11px;
+  margin-top:8px;
+}
+
+@media(max-width:700px){
+  #app{
+    grid-template-columns:1fr;
+  }
+
+  .sidebar{
+    display:none;
+  }
+
+  .top{
+    padding:0 15px;
+  }
+
+  .chat,
+  .composer{
+    padding-left:14px;
+    padding-right:14px;
+  }
+
+  .welcome h1{
+    font-size:32px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div id="app">
+
+  <aside class="sidebar">
+
+    <div class="brand">
+      TRZM <span>AI</span>
+    </div>
+
+    <button class="new" id="newChat">
+      + New chat
+    </button>
+
+    <div class="history" id="history"></div>
+
+    <div class="spacer"></div>
+
+    <div class="status">
+      AI chat interface • API-ready
+    </div>
+
+  </aside>
+
+  <main>
+
+    <header class="top">
+      <div class="model">
+        TRZM AI
+        <span class="badge">ONLINE</span>
+      </div>
+
+      <button id="clear">
+        Clear
+      </button>
+    </header>
+
+    <section class="chat" id="chat">
+
+      <div class="welcome" id="welcome">
+        <h1>What can I help with?</h1>
+
+        <p>
+          Ask TRZM AI a question, brainstorm an idea,
+          explain something, or help write code.
+        </p>
+      </div>
+
+    </section>
+
+    <div class="composer">
+
+      <form id="form">
+
+        <textarea
+          id="input"
+          placeholder="Message TRZM AI..."
+          rows="1"
+        ></textarea>
+
+        <button class="send" type="submit">
+          Send
+        </button>
+
+      </form>
+
+      <div class="hint">
+        Enter to send • Shift+Enter for a new line
+      </div>
+
+    </div>
+
+  </main>
+
+</div>
+
+<script>
+
+const chat = document.querySelector("#chat");
+const input = document.querySelector("#input");
+const form = document.querySelector("#form");
+const historyEl = document.querySelector("#history");
+
+let chats = [];
+
+try {
+  chats = JSON.parse(
+    localStorage.getItem("trzm_chats") || "[]"
+  );
+} catch (error) {
+  chats = [];
+}
+
+function save() {
+  localStorage.setItem(
+    "trzm_chats",
+    JSON.stringify(chats)
+  );
+
+  renderHistory();
+}
+
+function renderHistory() {
+
+  historyEl.innerHTML = "";
+
+  chats
+    .slice(-12)
+    .reverse()
+    .forEach((c, i) => {
+
+      const button = document.createElement("button");
+
+      button.textContent =
+        c.title || "New chat";
+
+      button.onclick = () => {
+        loadChat(chats.length - 1 - i);
+      };
+
+      historyEl.appendChild(button);
+    });
+}
+
+function welcome() {
+
+  chat.innerHTML = `
+    <div class="welcome" id="welcome">
+      <h1>What can I help with?</h1>
+      <p>
+        Ask TRZM AI a question, brainstorm an idea,
+        explain something, or help write code.
+      </p>
+    </div>
+  `;
+}
+
+function add(role, text) {
+
+  document.querySelector("#welcome")?.remove();
+
+  const message = document.createElement("div");
+
+  message.className =
+    "msg " + role;
+
+  const avatar =
+    document.createElement("div");
+
+  avatar.className = "avatar";
+
+  avatar.textContent =
+    role === "user" ? "YOU" : "AI";
+
+  const bubble =
+    document.createElement("div");
+
+  bubble.className = "bubble";
+
+  bubble.textContent = text;
+
+  message.appendChild(avatar);
+  message.appendChild(bubble);
+
+  chat.appendChild(message);
+
+  chat.scrollTop =
+    chat.scrollHeight;
+}
+
+let conversation = [];
+
+async function sendMessage(message) {
+
+  message = message.trim();
+
+  if (!message) return;
+
+  add("user", message);
+
+  conversation.push({
+    role: "user",
+    content: message
+  });
+
+  let currentChat =
+    chats[chats.length - 1];
+
+  if (
+    !currentChat ||
+    currentChat.messages.length
+  ) {
+
+    currentChat = {
+      title: message.slice(0, 35),
+      messages: []
+    };
+
+    chats.push(currentChat);
+  }
+
+  currentChat.messages.push({
+    role: "user",
+    text: message
+  });
+
+  save();
+
+  try {
+
+    const response =
+      await fetch("/api/chat", {
+
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json"
+        },
+
+        body: JSON.stringify({
+          messages: conversation
+        })
+
+      });
+
+    const data =
+      await response.json();
+
+    if (data.reply) {
+
+      add(
+        "ai",
+        data.reply
+      );
+
+      conversation.push({
+        role: "assistant",
+        content: data.reply
+      });
+
+      currentChat.messages.push({
+        role: "ai",
+        text: data.reply
+      });
+
+      save();
+
+    } else {
+
+      add(
+        "ai",
+        data.error ||
+        "Sorry, something went wrong."
+      );
+
+    }
+
+  } catch (error) {
+
+    console.error(error);
+
+    add(
+      "ai",
+      "TRZM could not connect to the AI server. Make sure server.js is running."
+    );
+  }
+}
+
+form.addEventListener(
+  "submit",
+  function(event) {
+
+    event.preventDefault();
+
+    const message =
+      input.value;
+
+    input.value = "";
+
+    input.style.height =
+      "44px";
+
+    sendMessage(message);
+  }
+);
+
+input.addEventListener(
+  "keydown",
+  function(event) {
+
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey
+    ) {
+
+      event.preventDefault();
+
+      form.requestSubmit();
+    }
+  }
+);
+
+input.addEventListener(
+  "input",
+  function() {
+
+    input.style.height =
+      "44px";
+
+    input.style.height =
+      Math.min(
+        input.scrollHeight,
+        150
+      ) + "px";
+  }
+);
+
+document
+  .querySelector("#newChat")
+  .onclick = function() {
+
+    conversation = [];
+
+    welcome();
+
+    input.focus();
+  };
+
+document
+  .querySelector("#clear")
+  .onclick = function() {
+
+    chat.innerHTML = "";
+
+    welcome();
+
+    conversation = [];
+  };
+
+function loadChat(index) {
+
+  const currentChat =
+    chats[index];
+
+  if (!currentChat) return;
+
+  chat.innerHTML = "";
+
+  conversation = [];
+
+  currentChat.messages.forEach(
+    function(message) {
+
+      add(
+        message.role,
+        message.text
+      );
+
+      if (
+        message.role === "user"
+      ) {
+
+        conversation.push({
+          role: "user",
+          content: message.text
+        });
+
+      }
+
+      if (
+        message.role === "ai"
+      ) {
+
+        conversation.push({
+          role: "assistant",
+          content: message.text
+        });
+
+      }
+
+    }
+  );
+}
+
+renderHistory();
+
+input.focus();
+
+</script>
+
+</body>
+</html>
